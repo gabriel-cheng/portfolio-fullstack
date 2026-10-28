@@ -34,3 +34,6 @@ build/
 
 ### Files ###
 .env
+
+### Directory ###
+portfolio-admin/
