@@ -6,7 +6,7 @@ import java.util.UUID;
 
 import com.example.ghcarvalho.portfolio.project.domain.project.ProjectStatus;
 
-public record ProjectDto(
+public record ProjectResponseDto(
         UUID id,
         String title,
         String slug,

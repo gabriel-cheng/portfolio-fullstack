@@ -1,7 +1,7 @@
-package com.example.ghcarvalho.portfolio.project.infra.controller;
+package com.example.ghcarvalho.portfolio.project.infra.controller.project;
 
-import com.example.ghcarvalho.portfolio.project.application.dto.project.ProjectDto;
-import com.example.ghcarvalho.portfolio.project.application.dto.project.ProjectDtoMapper;
+import com.example.ghcarvalho.portfolio.project.application.dto.project.ProjectResponseDto;
+import com.example.ghcarvalho.portfolio.project.application.dto.project.ProjectResponseMapper;
 import com.example.ghcarvalho.portfolio.project.application.query.ProjectQueryService;
 import com.example.ghcarvalho.portfolio.project.domain.project.Project;
 
@@ -17,29 +17,27 @@ import java.util.List;
 public class PublicProjectController {
 
     private final ProjectQueryService projectQueryService;
-    private final ProjectDtoMapper projectDtoMapper;
 
     public PublicProjectController(
-            ProjectQueryService projectQueryService,
-            ProjectDtoMapper projectDtoMapper
+            ProjectQueryService projectQueryService
     ) {
         this.projectQueryService = projectQueryService;
-        this.projectDtoMapper = projectDtoMapper;
     }
 
     @GetMapping
-    public List<ProjectDto> findAllPublished() {
+    public List<ProjectResponseDto> findAllPublished() {
         return projectQueryService.findAllPublished()
                 .stream()
-                .map(projectDtoMapper::toResponse)
+                .map(ProjectResponseMapper::toResponse)
                 .toList();
     }
 
     @GetMapping("/{slug}")
-    public ProjectDto findPublishedBySlug(
+    public ProjectResponseDto findPublishedBySlug(
             @PathVariable String slug
     ) {
         Project project = projectQueryService.findPublishedBySlug(slug);
-        return projectDtoMapper.toResponse(project);
+
+        return ProjectResponseMapper.toResponse(project);
     }
 }
