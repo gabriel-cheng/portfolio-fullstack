@@ -1,8 +1,8 @@
 package com.example.ghcarvalho.portfolio;
 
 import com.example.ghcarvalho.portfolio.project.application.dto.auth.LoginDto;
-import com.example.ghcarvalho.portfolio.project.application.dto.user.CreateUserDTO;
-import com.example.ghcarvalho.portfolio.project.application.dto.user.UpdatePasswordDTO;
+import com.example.ghcarvalho.portfolio.project.application.dto.user.CreateUserDto;
+import com.example.ghcarvalho.portfolio.project.application.dto.user.UpdatePasswordDto;
 import com.example.ghcarvalho.portfolio.project.infra.persistence.user.AdminUserEntity;
 import com.example.ghcarvalho.portfolio.project.infra.persistence.user.AdminUserRepository;
 import com.example.ghcarvalho.portfolio.project.infra.security.JwtUtil;
@@ -64,7 +64,7 @@ class AuthenticationIntegrationTest {
     @Test
     @DisplayName("POST /users - should register a new admin user successfully")
     void shouldRegisterNewUser() throws Exception {
-        CreateUserDTO request = new CreateUserDTO("alice", "password123");
+        CreateUserDto request = new CreateUserDto("alice", "password123");
 
         mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -82,7 +82,7 @@ class AuthenticationIntegrationTest {
     void shouldRejectDuplicateUsername() throws Exception {
         adminUserRepository.save(new AdminUserEntity("bob", passwordEncoder.encode("secret123")));
 
-        CreateUserDTO request = new CreateUserDTO("bob", "password456");
+        CreateUserDto request = new CreateUserDto("bob", "password456");
 
         mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -164,7 +164,7 @@ class AuthenticationIntegrationTest {
                 .andExpect(status().isOk());
 
         // Update password via PUT /users/me/password
-        UpdatePasswordDTO updatePasswordDTO = new UpdatePasswordDTO("oldPassword123", "newPassword456");
+        UpdatePasswordDto updatePasswordDTO = new UpdatePasswordDto("oldPassword123", "newPassword456");
         MvcResult updateResult = mockMvc.perform(put("/users/me/password")
                         .cookie(new Cookie("auth_token", oldToken))
                         .contentType(MediaType.APPLICATION_JSON)

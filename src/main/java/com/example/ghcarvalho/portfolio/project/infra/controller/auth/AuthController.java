@@ -1,4 +1,4 @@
-package com.example.ghcarvalho.portfolio.project.infra.controller;
+package com.example.ghcarvalho.portfolio.project.infra.controller.auth;
 
 import com.example.ghcarvalho.portfolio.project.application.dto.auth.LoginDto;
 import com.example.ghcarvalho.portfolio.project.application.dto.auth.UserResponseDTO;

@@ -1,11 +1,12 @@
-package com.example.ghcarvalho.portfolio.project.infra.controller;
+package com.example.ghcarvalho.portfolio.project.infra.controller.project;
 
 import com.example.ghcarvalho.portfolio.project.application.dto.project.CreateProjectDto;
-import com.example.ghcarvalho.portfolio.project.application.dto.project.ProjectDto;
 import com.example.ghcarvalho.portfolio.project.application.dto.project.ProjectDtoMapper;
+import com.example.ghcarvalho.portfolio.project.application.dto.project.ProjectResponseDto;
+import com.example.ghcarvalho.portfolio.project.application.dto.project.ProjectResponseMapper;
 import com.example.ghcarvalho.portfolio.project.application.dto.project.UpdateProjectDto;
 import com.example.ghcarvalho.portfolio.project.application.query.ProjectQueryService;
-import com.example.ghcarvalho.portfolio.project.application.service.ProjectCommandService;
+import com.example.ghcarvalho.portfolio.project.application.service.project.ProjectCommandService;
 import com.example.ghcarvalho.portfolio.project.domain.project.Project;
 
 import jakarta.validation.Valid;
@@ -35,21 +36,21 @@ public class AdminProjectController {
     }
 
     @GetMapping
-    public List<ProjectDto> findAll() {
+    public List<ProjectResponseDto> findAll() {
         return projectQueryService.findAll()
                 .stream()
-                .map(projectDtoMapper::toResponse)
+                .map(ProjectResponseMapper::toResponse)
                 .toList();
     }
 
     @GetMapping("/{id}")
-    public ProjectDto findById(@PathVariable UUID id) {
+    public ProjectResponseDto findById(@PathVariable UUID id) {
         Project project = projectQueryService.findById(id);
-        return projectDtoMapper.toResponse(project);
+        return ProjectResponseMapper.toResponse(project);
     }
 
     @PostMapping
-    public ResponseEntity<ProjectDto> create(
+    public ResponseEntity<ProjectResponseDto> create(
             @Valid @RequestBody CreateProjectDto request
     ) {
         Project project = projectCommandService.create(
@@ -58,11 +59,11 @@ public class AdminProjectController {
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(projectDtoMapper.toResponse(project));
+                .body(ProjectResponseMapper.toResponse(project));
     }
 
     @PutMapping("/{id}")
-    public ProjectDto update(
+    public ProjectResponseDto update(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateProjectDto request
     ) {
@@ -70,19 +71,19 @@ public class AdminProjectController {
                 projectDtoMapper.toCommand(id, request)
         );
 
-        return projectDtoMapper.toResponse(project);
+        return ProjectResponseMapper.toResponse(project);
     }
 
     @PatchMapping("/{id}/publish")
-    public ProjectDto publish(@PathVariable UUID id) {
+    public ProjectResponseDto publish(@PathVariable UUID id) {
         Project project = projectCommandService.publish(id);
-        return projectDtoMapper.toResponse(project);
+        return ProjectResponseMapper.toResponse(project);
     }
 
     @PatchMapping("/{id}/unpublish")
-    public ProjectDto unpublish(@PathVariable UUID id) {
+    public ProjectResponseDto unpublish(@PathVariable UUID id) {
         Project project = projectCommandService.unpublish(id);
-        return projectDtoMapper.toResponse(project);
+        return ProjectResponseMapper.toResponse(project);
     }
 
     @DeleteMapping("/{id}")

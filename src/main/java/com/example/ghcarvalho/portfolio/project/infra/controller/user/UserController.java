@@ -1,8 +1,8 @@
-package com.example.ghcarvalho.portfolio.project.infra.controller;
+package com.example.ghcarvalho.portfolio.project.infra.controller.user;
 
 import com.example.ghcarvalho.portfolio.project.application.dto.auth.UserResponseDTO;
-import com.example.ghcarvalho.portfolio.project.application.dto.user.CreateUserDTO;
-import com.example.ghcarvalho.portfolio.project.application.dto.user.UpdatePasswordDTO;
+import com.example.ghcarvalho.portfolio.project.application.dto.user.CreateUserDto;
+import com.example.ghcarvalho.portfolio.project.application.dto.user.UpdatePasswordDto;
 import com.example.ghcarvalho.portfolio.project.application.exceptions.AuthenticationFailedException;
 import com.example.ghcarvalho.portfolio.project.application.exceptions.UserAlreadyExistsException;
 import com.example.ghcarvalho.portfolio.project.infra.persistence.user.AdminUserEntity;
@@ -57,7 +57,7 @@ public class UserController {
 
     @PostMapping
     @Transactional
-    public ResponseEntity<UserResponseDTO> createUser(@RequestBody @Valid CreateUserDTO request) {
+    public ResponseEntity<UserResponseDTO> createUser(@RequestBody @Valid CreateUserDto request) {
         String normalizedUsername = request.username().trim();
 
         if (adminUserRepository.existsByUsername(normalizedUsername)) {
@@ -94,7 +94,7 @@ public class UserController {
     @Transactional
     public ResponseEntity<UserResponseDTO> updatePassword(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
-            @RequestBody @Valid UpdatePasswordDTO request
+            @RequestBody @Valid UpdatePasswordDto request
     ) {
         if (authenticatedUser == null) {
             throw new AuthenticationFailedException("Usuário não autenticado.");

@@ -3,7 +3,7 @@ package com.example.ghcarvalho.portfolio.project.application.dto.user;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-public record UpdatePasswordDTO(
+public record UpdatePasswordDto(
         @NotBlank(message = "Senha atual é obrigatória.")
         String currentPassword,
 
