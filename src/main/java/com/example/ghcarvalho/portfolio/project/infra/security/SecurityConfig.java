@@ -15,6 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CsrfFilter;
 
 @Configuration
 public class SecurityConfig {
@@ -49,29 +50,26 @@ public class SecurityConfig {
     ) throws Exception {
 
         http
-            .csrf(AbstractHttpConfigurer::disable)
+            .csrf(csrf -> csrf.spa())
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests(authorize -> authorize
-                // Rotas Públicas (sem token)
                 .requestMatchers(HttpMethod.POST, "/auth/login", "/api/v1/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/users", "/api/v1/users").permitAll()
                 .requestMatchers("/error", "/actuator/health").permitAll()
-
-                // Rotas públicas complementares do projeto existente
                 .requestMatchers("/", "/api/v1/public/**").permitAll()
-
-                // Rotas de administração (caso aplicável)
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-
-                // Rotas Protegidas: Todas as demais rotas exigem token válido no cookie
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider)
             .formLogin(AbstractHttpConfigurer::disable)
             .httpBasic(AbstractHttpConfigurer::disable)
             .logout(AbstractHttpConfigurer::disable)
+            .addFilterAfter(
+                new CsrfCookieFilter(),
+                CsrfFilter.class
+            )
             .addFilterBefore(
                 jwtAuthFilter,
                 UsernamePasswordAuthenticationFilter.class
