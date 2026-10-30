@@ -92,7 +92,9 @@ public class SecurityConfig {
 
         configuration.setAllowedOrigins(List.of(
             "http://localhost:5173",
-            "https://seu-portfolio.vercel.app"
+            "https://ghcarvalho.vercel.app",
+            "https://ghcarvalho.com.br",
+            "https://www.ghcarvalho.com.br"
         ));
 
         configuration.setAllowedMethods(List.of(
