@@ -27,4 +27,13 @@ public interface ExperienceJpaRepository
     List<ExperienceEntity> findAllByStatusOrderByDisplayOrderAscStartDateDesc(
             ExperienceStatus status
     );
+
+    List<ExperienceEntity> findAllByCompanyIdOrderByDisplayOrderAscStartDateDesc(
+            UUID companyId
+    );
+
+    List<ExperienceEntity> findAllByCompanyIdAndStatusOrderByDisplayOrderAscStartDateDesc(
+            UUID companyId,
+            ExperienceStatus status
+    );
 }

@@ -1,7 +1,10 @@
 package com.example.ghcarvalho.portfolio.project.application.service.experience;
 
+import com.example.ghcarvalho.portfolio.project.application.dto.company.CompanySummaryDto;
 import com.example.ghcarvalho.portfolio.project.application.dto.experience.ExperienceResponseDto;
 import com.example.ghcarvalho.portfolio.project.application.dto.experience.ExperienceRequestDto;
+import com.example.ghcarvalho.portfolio.project.application.service.company.CompanyService;
+import com.example.ghcarvalho.portfolio.project.domain.company.Company;
 import com.example.ghcarvalho.portfolio.project.domain.experience.Experience;
 import com.example.ghcarvalho.portfolio.project.domain.experience.ExperienceRepository;
 import com.example.ghcarvalho.portfolio.project.domain.experience.ExperienceStatus;
@@ -19,9 +22,14 @@ import java.util.UUID;
 public class ExperienceService {
 
     private final ExperienceRepository experienceRepository;
+    private final CompanyService companyService;
 
-    public ExperienceService(ExperienceRepository experienceRepository) {
+    public ExperienceService(
+            ExperienceRepository experienceRepository,
+            CompanyService companyService
+    ) {
         this.experienceRepository = experienceRepository;
+        this.companyService = companyService;
     }
 
     @Transactional
@@ -33,11 +41,14 @@ public class ExperienceService {
             );
         }
 
+        Company company = resolveCompany(request, null);
+
         OffsetDateTime now = OffsetDateTime.now();
 
         Experience experience = toDomain(
                 UUID.randomUUID(),
                 request,
+                company,
                 ExperienceStatus.PUBLISHED,
                 now,
                 now
@@ -60,9 +71,12 @@ public class ExperienceService {
             );
         }
 
+        Company company = resolveCompany(request, existing.getCompanyId());
+
         Experience updated = toDomain(
                 existing.getId(),
                 request,
+                company,
                 existing.getStatus(),
                 existing.getCreatedAt(),
                 OffsetDateTime.now()
@@ -105,6 +119,22 @@ public class ExperienceService {
         return toResponse(findByIdOrThrow(id));
     }
 
+    @Transactional(readOnly = true)
+    public List<ExperienceResponseDto> findAllByCompanyId(UUID companyId) {
+        return experienceRepository.findAllByCompanyId(companyId)
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ExperienceResponseDto> findAllPublishedByCompanyId(UUID companyId) {
+        return experienceRepository.findAllPublishedByCompanyId(companyId)
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
     @Transactional
     public void delete(UUID id) {
         findByIdOrThrow(id);
@@ -122,6 +152,7 @@ public class ExperienceService {
         Experience updated = new Experience(
                 existing.getId(),
                 existing.getSlug(),
+                existing.getCompanyId(),
                 existing.getCompany(),
                 existing.getRole(),
                 existing.getEmploymentType(),
@@ -140,6 +171,25 @@ public class ExperienceService {
         return toResponse(experienceRepository.save(updated));
     }
 
+    private Company resolveCompany(ExperienceRequestDto request, UUID fallbackCompanyId) {
+        if (request.companyId() != null) {
+            return companyService.findByIdOrThrow(request.companyId());
+        }
+
+        if (request.company() != null && !request.company().isBlank()) {
+            return companyService.findOrCreateByName(request.company());
+        }
+
+        if (fallbackCompanyId != null) {
+            return companyService.findByIdOrThrow(fallbackCompanyId);
+        }
+
+        throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "A empresa (companyId ou nome) é obrigatória."
+        );
+    }
+
     private Experience findByIdOrThrow(UUID id) {
         return experienceRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -151,6 +201,7 @@ public class ExperienceService {
     private Experience toDomain(
             UUID id,
             ExperienceRequestDto request,
+            Company company,
             ExperienceStatus status,
             OffsetDateTime createdAt,
             OffsetDateTime updatedAt
@@ -158,7 +209,8 @@ public class ExperienceService {
         return new Experience(
                 id,
                 request.slug(),
-                request.company(),
+                company.getId(),
+                company,
                 request.role(),
                 request.employmentType(),
                 request.location(),
@@ -175,10 +227,24 @@ public class ExperienceService {
     }
 
     private ExperienceResponseDto toResponse(Experience experience) {
+        Company company = experience.getCompany();
+        if (company == null && experience.getCompanyId() != null) {
+            try {
+                company = companyService.findByIdOrThrow(experience.getCompanyId());
+            } catch (Exception ignored) {
+                // Ignore if not resolvable immediately
+            }
+        }
+
+        String companyName = company != null ? company.getName() : null;
+        CompanySummaryDto companySummary = companyService.toSummary(company);
+
         return new ExperienceResponseDto(
                 experience.getId(),
                 experience.getSlug(),
-                experience.getCompany(),
+                experience.getCompanyId(),
+                companyName,
+                companySummary,
                 experience.getRole(),
                 experience.getEmploymentType(),
                 experience.getLocation(),

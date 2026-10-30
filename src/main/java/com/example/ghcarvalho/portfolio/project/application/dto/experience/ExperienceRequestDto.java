@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 import com.example.ghcarvalho.portfolio.project.domain.experience.EmploymentType;
 
@@ -16,7 +17,8 @@ public record ExperienceRequestDto(
         @Size(max = 180)
         String slug,
 
-        @NotBlank
+        UUID companyId,
+
         @Size(max = 180)
         String company,
 

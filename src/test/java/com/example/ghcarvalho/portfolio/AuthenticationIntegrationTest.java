@@ -25,6 +25,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -67,6 +68,7 @@ class AuthenticationIntegrationTest {
         CreateUserDto request = new CreateUserDto("alice", "password123");
 
         mockMvc.perform(post("/users")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -85,6 +87,7 @@ class AuthenticationIntegrationTest {
         CreateUserDto request = new CreateUserDto("bob", "password456");
 
         mockMvc.perform(post("/users")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict());
@@ -98,6 +101,7 @@ class AuthenticationIntegrationTest {
         LoginDto loginRequest = new LoginDto("carol", "mypassword");
 
         MvcResult result = mockMvc.perform(post("/auth/login")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
@@ -122,6 +126,7 @@ class AuthenticationIntegrationTest {
         LoginDto badPasswordRequest = new LoginDto("dave", "wrongpass");
 
         mockMvc.perform(post("/auth/login")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(badPasswordRequest)))
                 .andExpect(status().isUnauthorized());
@@ -166,6 +171,7 @@ class AuthenticationIntegrationTest {
         // Update password via PUT /users/me/password
         UpdatePasswordDto updatePasswordDTO = new UpdatePasswordDto("oldPassword123", "newPassword456");
         MvcResult updateResult = mockMvc.perform(put("/users/me/password")
+                        .with(csrf())
                         .cookie(new Cookie("auth_token", oldToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updatePasswordDTO)))
@@ -195,6 +201,7 @@ class AuthenticationIntegrationTest {
         String token = jwtUtil.generateToken("grace");
 
         MvcResult result = mockMvc.perform(post("/auth/logout")
+                        .with(csrf())
                         .cookie(new Cookie("auth_token", token)))
                 .andExpect(status().isNoContent())
                 .andExpect(header().exists(HttpHeaders.SET_COOKIE))

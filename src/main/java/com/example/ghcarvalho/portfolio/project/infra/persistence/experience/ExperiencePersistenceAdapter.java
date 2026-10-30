@@ -3,9 +3,12 @@ package com.example.ghcarvalho.portfolio.project.infra.persistence.experience;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.ghcarvalho.portfolio.project.domain.company.Company;
 import com.example.ghcarvalho.portfolio.project.domain.experience.Experience;
 import com.example.ghcarvalho.portfolio.project.domain.experience.ExperienceRepository;
 import com.example.ghcarvalho.portfolio.project.domain.experience.ExperienceStatus;
+import com.example.ghcarvalho.portfolio.project.infra.persistence.company.CompanyEntity;
+import com.example.ghcarvalho.portfolio.project.infra.persistence.company.CompanyJpaRepository;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -16,11 +19,14 @@ import java.util.UUID;
 public class ExperiencePersistenceAdapter implements ExperienceRepository {
 
     private final ExperienceJpaRepository jpaRepository;
+    private final CompanyJpaRepository companyJpaRepository;
 
     public ExperiencePersistenceAdapter(
-            ExperienceJpaRepository jpaRepository
+            ExperienceJpaRepository jpaRepository,
+            CompanyJpaRepository companyJpaRepository
     ) {
         this.jpaRepository = jpaRepository;
+        this.companyJpaRepository = companyJpaRepository;
     }
 
     @Override
@@ -43,8 +49,14 @@ public class ExperiencePersistenceAdapter implements ExperienceRepository {
             );
         }
 
+        CompanyEntity companyEntity = companyJpaRepository
+                .findById(experience.getCompanyId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Empresa não encontrada para o ID fornecido: " + experience.getCompanyId()
+                ));
+
         entity.setSlug(experience.getSlug());
-        entity.setCompany(experience.getCompany());
+        entity.setCompany(companyEntity);
         entity.setRole(experience.getRole());
         entity.setEmploymentType(experience.getEmploymentType());
         entity.setLocation(experience.getLocation());
@@ -96,6 +108,29 @@ public class ExperiencePersistenceAdapter implements ExperienceRepository {
 
     @Override
     @Transactional(readOnly = true)
+    public List<Experience> findAllByCompanyId(UUID companyId) {
+        return jpaRepository
+                .findAllByCompanyIdOrderByDisplayOrderAscStartDateDesc(companyId)
+                .stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Experience> findAllPublishedByCompanyId(UUID companyId) {
+        return jpaRepository
+                .findAllByCompanyIdAndStatusOrderByDisplayOrderAscStartDateDesc(
+                        companyId,
+                        ExperienceStatus.PUBLISHED
+                )
+                .stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public boolean existsBySlug(String slug) {
         return jpaRepository.existsBySlug(slug);
     }
@@ -113,10 +148,26 @@ public class ExperiencePersistenceAdapter implements ExperienceRepository {
     }
 
     private Experience toDomain(ExperienceEntity entity) {
+        Company company = null;
+        if (entity.getCompany() != null) {
+            company = new Company(
+                    entity.getCompany().getId(),
+                    entity.getCompany().getName(),
+                    entity.getCompany().getSlug(),
+                    entity.getCompany().getDescription(),
+                    entity.getCompany().getWebsite(),
+                    entity.getCompany().getLogoUrl(),
+                    List.of(),
+                    entity.getCompany().getCreatedAt(),
+                    entity.getCompany().getUpdatedAt()
+            );
+        }
+
         return new Experience(
                 entity.getId(),
                 entity.getSlug(),
-                entity.getCompany(),
+                entity.getCompanyId(),
+                company,
                 entity.getRole(),
                 entity.getEmploymentType(),
                 entity.getLocation(),

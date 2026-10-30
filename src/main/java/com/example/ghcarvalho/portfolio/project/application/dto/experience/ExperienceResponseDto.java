@@ -5,13 +5,16 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import com.example.ghcarvalho.portfolio.project.application.dto.company.CompanySummaryDto;
 import com.example.ghcarvalho.portfolio.project.domain.experience.EmploymentType;
 import com.example.ghcarvalho.portfolio.project.domain.experience.ExperienceStatus;
 
 public record ExperienceResponseDto(
         UUID id,
         String slug,
+        UUID companyId,
         String company,
+        CompanySummaryDto companyDetails,
         String role,
         EmploymentType employmentType,
         String location,

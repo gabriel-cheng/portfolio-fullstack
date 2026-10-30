@@ -16,6 +16,10 @@ public interface ExperienceRepository {
 
     List<Experience> findAllPublished();
 
+    List<Experience> findAllByCompanyId(UUID companyId);
+
+    List<Experience> findAllPublishedByCompanyId(UUID companyId);
+
     boolean existsBySlug(String slug);
 
     boolean existsBySlugAndIdNot(String slug, UUID id);

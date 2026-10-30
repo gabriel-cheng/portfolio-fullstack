@@ -1,5 +1,9 @@
 package com.example.ghcarvalho.portfolio.project.infra.persistence.experience;
 
+import com.example.ghcarvalho.portfolio.project.domain.experience.EmploymentType;
+import com.example.ghcarvalho.portfolio.project.domain.experience.ExperienceStatus;
+import com.example.ghcarvalho.portfolio.project.infra.persistence.company.CompanyEntity;
+
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -9,6 +13,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
 
@@ -17,9 +22,6 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
-import com.example.ghcarvalho.portfolio.project.domain.experience.EmploymentType;
-import com.example.ghcarvalho.portfolio.project.domain.experience.ExperienceStatus;
 
 @Entity
 @Table(name = "experiences")
@@ -31,8 +33,9 @@ public class ExperienceEntity {
     @Column(nullable = false, unique = true, length = 180)
     private String slug;
 
-    @Column(nullable = false, length = 180)
-    private String company;
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "company_id", nullable = false)
+    private CompanyEntity company;
 
     @Column(nullable = false, length = 180)
     private String role;
@@ -78,7 +81,7 @@ public class ExperienceEntity {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
-    protected ExperienceEntity() {
+    public ExperienceEntity() {
     }
 
     public UUID getId() {
@@ -97,12 +100,16 @@ public class ExperienceEntity {
         this.slug = slug;
     }
 
-    public String getCompany() {
+    public CompanyEntity getCompany() {
         return company;
     }
 
-    public void setCompany(String company) {
+    public void setCompany(CompanyEntity company) {
         this.company = company;
+    }
+
+    public UUID getCompanyId() {
+        return company != null ? company.getId() : null;
     }
 
     public String getRole() {
