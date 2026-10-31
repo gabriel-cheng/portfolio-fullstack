@@ -6,7 +6,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.ghcarvalho.portfolio.project.domain.company.Company;
 import com.example.ghcarvalho.portfolio.project.domain.experience.Experience;
 import com.example.ghcarvalho.portfolio.project.domain.experience.ExperienceRepository;
-import com.example.ghcarvalho.portfolio.project.domain.experience.ExperienceStatus;
 import com.example.ghcarvalho.portfolio.project.infra.persistence.company.CompanyEntity;
 import com.example.ghcarvalho.portfolio.project.infra.persistence.company.CompanyJpaRepository;
 
@@ -65,7 +64,6 @@ public class ExperiencePersistenceAdapter implements ExperienceRepository {
         entity.setEndDate(experience.getEndDate());
         entity.setCurrent(experience.isCurrent());
         entity.setDisplayOrder(experience.getDisplayOrder());
-        entity.setStatus(experience.getStatus());
         entity.setTechnologies(experience.getTechnologies());
         entity.setUpdatedAt(now);
 
@@ -96,34 +94,9 @@ public class ExperiencePersistenceAdapter implements ExperienceRepository {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Experience> findAllPublished() {
-        return jpaRepository
-                .findAllByStatusOrderByDisplayOrderAscStartDateDesc(
-                        ExperienceStatus.PUBLISHED
-                )
-                .stream()
-                .map(this::toDomain)
-                .toList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public List<Experience> findAllByCompanyId(UUID companyId) {
         return jpaRepository
                 .findAllByCompanyIdOrderByDisplayOrderAscStartDateDesc(companyId)
-                .stream()
-                .map(this::toDomain)
-                .toList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<Experience> findAllPublishedByCompanyId(UUID companyId) {
-        return jpaRepository
-                .findAllByCompanyIdAndStatusOrderByDisplayOrderAscStartDateDesc(
-                        companyId,
-                        ExperienceStatus.PUBLISHED
-                )
                 .stream()
                 .map(this::toDomain)
                 .toList();
@@ -157,6 +130,7 @@ public class ExperiencePersistenceAdapter implements ExperienceRepository {
                     entity.getCompany().getDescription(),
                     entity.getCompany().getWebsite(),
                     entity.getCompany().getLogoUrl(),
+                    entity.getCompany().getStatus(),
                     List.of(),
                     entity.getCompany().getCreatedAt(),
                     entity.getCompany().getUpdatedAt()
@@ -176,7 +150,6 @@ public class ExperiencePersistenceAdapter implements ExperienceRepository {
                 entity.getEndDate(),
                 entity.isCurrent(),
                 entity.getDisplayOrder(),
-                entity.getStatus(),
                 entity.getTechnologies(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()

@@ -7,7 +7,6 @@ import com.example.ghcarvalho.portfolio.project.application.service.company.Comp
 import com.example.ghcarvalho.portfolio.project.domain.company.Company;
 import com.example.ghcarvalho.portfolio.project.domain.experience.Experience;
 import com.example.ghcarvalho.portfolio.project.domain.experience.ExperienceRepository;
-import com.example.ghcarvalho.portfolio.project.domain.experience.ExperienceStatus;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -49,7 +48,6 @@ public class ExperienceService {
                 UUID.randomUUID(),
                 request,
                 company,
-                ExperienceStatus.PUBLISHED,
                 now,
                 now
         );
@@ -77,7 +75,6 @@ public class ExperienceService {
                 existing.getId(),
                 request,
                 company,
-                existing.getStatus(),
                 existing.getCreatedAt(),
                 OffsetDateTime.now()
         );
@@ -95,8 +92,15 @@ public class ExperienceService {
 
     @Transactional(readOnly = true)
     public List<ExperienceResponseDto> findAllPublished() {
-        return experienceRepository.findAllPublished()
+        return experienceRepository.findAll()
                 .stream()
+                .filter(exp -> {
+                    Company company = exp.getCompany();
+                    if (company == null && exp.getCompanyId() != null) {
+                        company = companyService.findByIdOrThrow(exp.getCompanyId());
+                    }
+                    return company != null && company.isPublished();
+                })
                 .map(this::toResponse)
                 .toList();
     }
@@ -104,8 +108,13 @@ public class ExperienceService {
     @Transactional(readOnly = true)
     public ExperienceResponseDto findPublishedBySlug(String slug) {
         Experience experience = experienceRepository.findBySlug(slug)
-                .filter(item ->
-                        item.getStatus() == ExperienceStatus.PUBLISHED)
+                .filter(exp -> {
+                    Company company = exp.getCompany();
+                    if (company == null && exp.getCompanyId() != null) {
+                        company = companyService.findByIdOrThrow(exp.getCompanyId());
+                    }
+                    return company != null && company.isPublished();
+                })
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "Experiência não encontrada."
@@ -127,48 +136,10 @@ public class ExperienceService {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
-    public List<ExperienceResponseDto> findAllPublishedByCompanyId(UUID companyId) {
-        return experienceRepository.findAllPublishedByCompanyId(companyId)
-                .stream()
-                .map(this::toResponse)
-                .toList();
-    }
-
     @Transactional
     public void delete(UUID id) {
         findByIdOrThrow(id);
         experienceRepository.deleteById(id);
-    }
-
-    @Transactional
-    public ExperienceResponseDto setVisibility(UUID id, boolean visible) {
-        Experience existing = findByIdOrThrow(id);
-
-        ExperienceStatus status = visible
-                ? ExperienceStatus.PUBLISHED
-                : ExperienceStatus.HIDDEN;
-
-        Experience updated = new Experience(
-                existing.getId(),
-                existing.getSlug(),
-                existing.getCompanyId(),
-                existing.getCompany(),
-                existing.getRole(),
-                existing.getEmploymentType(),
-                existing.getLocation(),
-                existing.getDescription(),
-                existing.getStartDate(),
-                existing.getEndDate(),
-                existing.isCurrent(),
-                existing.getDisplayOrder(),
-                status,
-                existing.getTechnologies(),
-                existing.getCreatedAt(),
-                OffsetDateTime.now()
-        );
-
-        return toResponse(experienceRepository.save(updated));
     }
 
     private Company resolveCompany(ExperienceRequestDto request, UUID fallbackCompanyId) {
@@ -202,7 +173,6 @@ public class ExperienceService {
             UUID id,
             ExperienceRequestDto request,
             Company company,
-            ExperienceStatus status,
             OffsetDateTime createdAt,
             OffsetDateTime updatedAt
     ) {
@@ -219,7 +189,6 @@ public class ExperienceService {
                 request.endDate(),
                 request.current(),
                 request.displayOrder(),
-                status,
                 request.technologies(),
                 createdAt,
                 updatedAt
@@ -253,7 +222,6 @@ public class ExperienceService {
                 experience.getEndDate(),
                 experience.isCurrent(),
                 experience.getDisplayOrder(),
-                experience.getStatus(),
                 experience.getTechnologies(),
                 experience.getCreatedAt(),
                 experience.getUpdatedAt()

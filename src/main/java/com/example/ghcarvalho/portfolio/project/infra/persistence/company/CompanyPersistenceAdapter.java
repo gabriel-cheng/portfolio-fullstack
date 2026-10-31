@@ -2,6 +2,7 @@ package com.example.ghcarvalho.portfolio.project.infra.persistence.company;
 
 import com.example.ghcarvalho.portfolio.project.domain.company.Company;
 import com.example.ghcarvalho.portfolio.project.domain.company.CompanyRepository;
+import com.example.ghcarvalho.portfolio.project.domain.company.PublicationStatus;
 import com.example.ghcarvalho.portfolio.project.domain.experience.Experience;
 import com.example.ghcarvalho.portfolio.project.infra.persistence.experience.ExperienceEntity;
 
@@ -47,6 +48,7 @@ public class CompanyPersistenceAdapter implements CompanyRepository {
         entity.setDescription(company.getDescription());
         entity.setWebsite(company.getWebsite());
         entity.setLogoUrl(company.getLogoUrl());
+        entity.setStatus(company.getStatus());
         entity.setUpdatedAt(now);
 
         return toDomain(jpaRepository.save(entity), false);
@@ -66,6 +68,13 @@ public class CompanyPersistenceAdapter implements CompanyRepository {
 
     @Override
     @Transactional(readOnly = true)
+    public Optional<Company> findPublishedBySlug(String slug) {
+        return jpaRepository.findBySlugAndStatus(slug, PublicationStatus.PUBLISHED)
+                .map(entity -> toDomain(entity, true));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Optional<Company> findByName(String name) {
         return jpaRepository.findByNameIgnoreCase(name).map(entity -> toDomain(entity, true));
     }
@@ -74,6 +83,15 @@ public class CompanyPersistenceAdapter implements CompanyRepository {
     @Transactional(readOnly = true)
     public List<Company> findAll() {
         return jpaRepository.findAllByOrderByNameAsc()
+                .stream()
+                .map(entity -> toDomain(entity, true))
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Company> findAllPublished() {
+        return jpaRepository.findAllByStatusOrderByNameAsc(PublicationStatus.PUBLISHED)
                 .stream()
                 .map(entity -> toDomain(entity, true))
                 .toList();
@@ -119,6 +137,7 @@ public class CompanyPersistenceAdapter implements CompanyRepository {
                 entity.getDescription(),
                 entity.getWebsite(),
                 entity.getLogoUrl(),
+                entity.getStatus(),
                 experiences,
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
@@ -133,6 +152,7 @@ public class CompanyPersistenceAdapter implements CompanyRepository {
                 entity.getCompany().getDescription(),
                 entity.getCompany().getWebsite(),
                 entity.getCompany().getLogoUrl(),
+                entity.getCompany().getStatus(),
                 List.of(),
                 entity.getCompany().getCreatedAt(),
                 entity.getCompany().getUpdatedAt()
@@ -151,11 +171,9 @@ public class CompanyPersistenceAdapter implements CompanyRepository {
                 entity.getEndDate(),
                 entity.isCurrent(),
                 entity.getDisplayOrder(),
-                entity.getStatus(),
                 entity.getTechnologies(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
         );
     }
 }
-

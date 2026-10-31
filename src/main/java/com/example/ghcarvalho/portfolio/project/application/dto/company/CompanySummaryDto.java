@@ -1,5 +1,7 @@
 package com.example.ghcarvalho.portfolio.project.application.dto.company;
 
+import com.example.ghcarvalho.portfolio.project.domain.company.PublicationStatus;
+
 import java.util.UUID;
 
 public record CompanySummaryDto(
@@ -7,7 +9,7 @@ public record CompanySummaryDto(
         String name,
         String slug,
         String logoUrl,
-        String website
+        String website,
+        PublicationStatus status
 ) {
 }
-

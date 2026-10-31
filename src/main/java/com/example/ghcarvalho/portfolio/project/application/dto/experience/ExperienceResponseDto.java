@@ -7,7 +7,6 @@ import java.util.UUID;
 
 import com.example.ghcarvalho.portfolio.project.application.dto.company.CompanySummaryDto;
 import com.example.ghcarvalho.portfolio.project.domain.experience.EmploymentType;
-import com.example.ghcarvalho.portfolio.project.domain.experience.ExperienceStatus;
 
 public record ExperienceResponseDto(
         UUID id,
@@ -23,7 +22,6 @@ public record ExperienceResponseDto(
         LocalDate endDate,
         boolean current,
         int displayOrder,
-        ExperienceStatus status,
         List<String> technologies,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
