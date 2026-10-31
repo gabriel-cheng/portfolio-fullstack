@@ -15,6 +15,7 @@ public class Company {
     private final String description;
     private final String website;
     private final String logoUrl;
+    private final PublicationStatus status;
     private final List<Experience> experiences;
     private final OffsetDateTime createdAt;
     private final OffsetDateTime updatedAt;
@@ -26,6 +27,7 @@ public class Company {
             String description,
             String website,
             String logoUrl,
+            PublicationStatus status,
             List<Experience> experiences,
             OffsetDateTime createdAt,
             OffsetDateTime updatedAt
@@ -36,6 +38,7 @@ public class Company {
         this.description = description;
         this.website = website;
         this.logoUrl = logoUrl;
+        this.status = status != null ? status : PublicationStatus.DRAFT;
         this.experiences = experiences == null ? List.of() : List.copyOf(experiences);
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -48,10 +51,24 @@ public class Company {
             String description,
             String website,
             String logoUrl,
+            List<Experience> experiences,
             OffsetDateTime createdAt,
             OffsetDateTime updatedAt
     ) {
-        this(id, name, slug, description, website, logoUrl, List.of(), createdAt, updatedAt);
+        this(id, name, slug, description, website, logoUrl, PublicationStatus.DRAFT, experiences, createdAt, updatedAt);
+    }
+
+    public Company(
+            UUID id,
+            String name,
+            String slug,
+            String description,
+            String website,
+            String logoUrl,
+            OffsetDateTime createdAt,
+            OffsetDateTime updatedAt
+    ) {
+        this(id, name, slug, description, website, logoUrl, PublicationStatus.DRAFT, List.of(), createdAt, updatedAt);
     }
 
     private static String requireText(String value, String field) {
@@ -59,6 +76,29 @@ public class Company {
             throw new IllegalArgumentException(field + " não pode ser vazio.");
         }
         return value.trim();
+    }
+
+    public Company publish() {
+        return withStatus(PublicationStatus.PUBLISHED);
+    }
+
+    public Company unpublish() {
+        return withStatus(PublicationStatus.DRAFT);
+    }
+
+    public Company withStatus(PublicationStatus status) {
+        return new Company(
+                this.id,
+                this.name,
+                this.slug,
+                this.description,
+                this.website,
+                this.logoUrl,
+                status,
+                this.experiences,
+                this.createdAt,
+                OffsetDateTime.now()
+        );
     }
 
     public Company withExperiences(List<Experience> experiences) {
@@ -69,6 +109,7 @@ public class Company {
                 this.description,
                 this.website,
                 this.logoUrl,
+                this.status,
                 experiences,
                 this.createdAt,
                 this.updatedAt
@@ -99,6 +140,14 @@ public class Company {
         return logoUrl;
     }
 
+    public PublicationStatus getStatus() {
+        return status;
+    }
+
+    public boolean isPublished() {
+        return status == PublicationStatus.PUBLISHED;
+    }
+
     public List<Experience> getExperiences() {
         return experiences;
     }
@@ -111,4 +160,3 @@ public class Company {
         return updatedAt;
     }
 }
-

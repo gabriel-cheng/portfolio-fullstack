@@ -22,12 +22,11 @@ public class PublicCompanyController {
 
     @GetMapping
     public List<CompanyResponseDto> findAll() {
-        return companyService.findAll();
+        return companyService.findAllPublished();
     }
 
     @GetMapping("/{slug}")
     public CompanyResponseDto findBySlug(@PathVariable String slug) {
-        return companyService.findBySlug(slug);
+        return companyService.findPublishedBySlug(slug);
     }
 }
-

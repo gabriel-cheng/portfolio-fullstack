@@ -1,9 +1,12 @@
 package com.example.ghcarvalho.portfolio.project.infra.persistence.company;
 
+import com.example.ghcarvalho.portfolio.project.domain.company.PublicationStatus;
 import com.example.ghcarvalho.portfolio.project.infra.persistence.experience.ExperienceEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
@@ -36,6 +39,10 @@ public class CompanyEntity {
 
     @Column(name = "logo_url", length = 500)
     private String logoUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private PublicationStatus status = PublicationStatus.DRAFT;
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("displayOrder ASC, startDate DESC")
@@ -112,6 +119,14 @@ public class CompanyEntity {
         this.logoUrl = logoUrl;
     }
 
+    public PublicationStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(PublicationStatus status) {
+        this.status = status != null ? status : PublicationStatus.DRAFT;
+    }
+
     public List<ExperienceEntity> getExperiences() {
         return experiences;
     }
@@ -136,4 +151,3 @@ public class CompanyEntity {
         this.updatedAt = updatedAt;
     }
 }
-

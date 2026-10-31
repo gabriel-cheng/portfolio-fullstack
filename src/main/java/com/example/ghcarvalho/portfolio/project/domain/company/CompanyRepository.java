@@ -16,6 +16,10 @@ public interface CompanyRepository {
 
     List<Company> findAll();
 
+    List<Company> findAllPublished();
+
+    Optional<Company> findPublishedBySlug(String slug);
+
     boolean existsBySlug(String slug);
 
     boolean existsBySlugAndIdNot(String slug, UUID id);
@@ -24,4 +28,3 @@ public interface CompanyRepository {
 
     void deleteById(UUID id);
 }
-

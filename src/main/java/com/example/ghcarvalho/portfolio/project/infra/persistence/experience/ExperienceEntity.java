@@ -1,7 +1,6 @@
 package com.example.ghcarvalho.portfolio.project.infra.persistence.experience;
 
 import com.example.ghcarvalho.portfolio.project.domain.experience.EmploymentType;
-import com.example.ghcarvalho.portfolio.project.domain.experience.ExperienceStatus;
 import com.example.ghcarvalho.portfolio.project.infra.persistence.company.CompanyEntity;
 
 import jakarta.persistence.CollectionTable;
@@ -61,10 +60,6 @@ public class ExperienceEntity {
 
     @Column(name = "display_order", nullable = false)
     private int displayOrder;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private ExperienceStatus status;
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
@@ -176,22 +171,12 @@ public class ExperienceEntity {
         this.displayOrder = displayOrder;
     }
 
-    public ExperienceStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(ExperienceStatus status) {
-        this.status = status;
-    }
-
     public List<String> getTechnologies() {
         return technologies;
     }
 
     public void setTechnologies(List<String> technologies) {
-        this.technologies = technologies == null
-                ? new ArrayList<>()
-                : new ArrayList<>(technologies);
+        this.technologies = technologies != null ? technologies : new ArrayList<>();
     }
 
     public OffsetDateTime getCreatedAt() {

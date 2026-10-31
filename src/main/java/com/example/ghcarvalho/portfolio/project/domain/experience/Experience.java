@@ -22,7 +22,6 @@ public class Experience {
     private final LocalDate endDate;
     private final boolean current;
     private final int displayOrder;
-    private final ExperienceStatus status;
     private final List<String> technologies;
     private final OffsetDateTime createdAt;
     private final OffsetDateTime updatedAt;
@@ -40,7 +39,6 @@ public class Experience {
             LocalDate endDate,
             boolean current,
             int displayOrder,
-            ExperienceStatus status,
             List<String> technologies,
             OffsetDateTime createdAt,
             OffsetDateTime updatedAt
@@ -76,7 +74,6 @@ public class Experience {
         }
 
         this.displayOrder = displayOrder;
-        this.status = Objects.requireNonNull(status, "Status não pode ser nulo.");
         this.technologies = technologies == null
                 ? List.of()
                 : List.copyOf(technologies);
@@ -96,7 +93,6 @@ public class Experience {
             LocalDate endDate,
             boolean current,
             int displayOrder,
-            ExperienceStatus status,
             List<String> technologies,
             OffsetDateTime createdAt,
             OffsetDateTime updatedAt
@@ -114,7 +110,6 @@ public class Experience {
                 endDate,
                 current,
                 displayOrder,
-                status,
                 technologies,
                 createdAt,
                 updatedAt
@@ -145,7 +140,6 @@ public class Experience {
                 this.endDate,
                 this.current,
                 this.displayOrder,
-                this.status,
                 this.technologies,
                 this.createdAt,
                 this.updatedAt
@@ -202,10 +196,6 @@ public class Experience {
 
     public int getDisplayOrder() {
         return displayOrder;
-    }
-
-    public ExperienceStatus getStatus() {
-        return status;
     }
 
     public List<String> getTechnologies() {

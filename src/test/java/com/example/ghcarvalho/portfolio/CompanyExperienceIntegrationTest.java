@@ -2,6 +2,7 @@ package com.example.ghcarvalho.portfolio;
 
 import com.example.ghcarvalho.portfolio.project.application.dto.company.CompanyRequestDto;
 import com.example.ghcarvalho.portfolio.project.application.dto.experience.ExperienceRequestDto;
+import com.example.ghcarvalho.portfolio.project.domain.company.PublicationStatus;
 import com.example.ghcarvalho.portfolio.project.domain.experience.EmploymentType;
 import com.example.ghcarvalho.portfolio.project.infra.persistence.company.CompanyJpaRepository;
 import com.example.ghcarvalho.portfolio.project.infra.persistence.experience.ExperienceJpaRepository;
@@ -32,8 +33,8 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -83,9 +84,9 @@ class CompanyExperienceIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should create Company and associate multiple Experiences to it (1:N)")
-    void shouldCreateCompanyWithMultipleExperiences() throws Exception {
-        // 1. Create a Company via Admin API
+    @DisplayName("Should create Company in DRAFT, add experiences, publish company, and verify public visibility")
+    void shouldManageCompanyPublicationLifecycleAndExperiences() throws Exception {
+        // 1. Create a Company via Admin API (defaults to DRAFT)
         CompanyRequestDto companyRequest = new CompanyRequestDto(
                 "Acme Corp",
                 "acme-corp",
@@ -103,6 +104,7 @@ class CompanyExperienceIntegrationTest {
                 .andExpect(jsonPath("$.id").isNotEmpty())
                 .andExpect(jsonPath("$.name").value("Acme Corp"))
                 .andExpect(jsonPath("$.slug").value("acme-corp"))
+                .andExpect(jsonPath("$.status").value("DRAFT"))
                 .andReturn();
 
         String companyResponseStr = companyResult.getResponse().getContentAsString();
@@ -133,9 +135,24 @@ class CompanyExperienceIntegrationTest {
                 .andExpect(jsonPath("$.slug").value("junior-developer-acme"))
                 .andExpect(jsonPath("$.company").value("Acme Corp"))
                 .andExpect(jsonPath("$.companyId").value(companyId.toString()))
-                .andExpect(jsonPath("$.companyDetails.name").value("Acme Corp"));
+                .andExpect(jsonPath("$.status").doesNotExist()); // No individual status on Experience
 
-        // 3. Create Experience 2 for Acme Corp (promotion!)
+        // 3. Since company is DRAFT, it should NOT appear on public endpoints
+        mockMvc.perform(get("/api/v1/public/companies"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+
+        mockMvc.perform(get("/api/v1/public/companies/acme-corp"))
+                .andExpect(status().isNotFound());
+
+        // 4. Publish company via Admin PATCH endpoint
+        mockMvc.perform(patch("/api/v1/admin/companies/" + companyId + "/publish")
+                        .with(csrf())
+                        .cookie(adminAuthCookie))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("PUBLISHED"));
+
+        // 5. Create Experience 2 for Acme Corp (promotion!) - automatically available on public frontend
         ExperienceRequestDto exp2 = new ExperienceRequestDto(
                 "senior-developer-acme",
                 companyId,
@@ -143,7 +160,7 @@ class CompanyExperienceIntegrationTest {
                 "Desenvolvedor Sênior",
                 EmploymentType.FULL_TIME,
                 "Remoto",
-                "Liderança técnica e arquitetura de microsserviços",
+                "Liderança técnica e arquitetura",
                 LocalDate.of(2022, 7, 1),
                 null,
                 true,
@@ -159,22 +176,70 @@ class CompanyExperienceIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.slug").value("senior-developer-acme"))
                 .andExpect(jsonPath("$.company").value("Acme Corp"))
-                .andExpect(jsonPath("$.companyId").value(companyId.toString()));
+                .andExpect(jsonPath("$.status").doesNotExist());
 
-        // 4. Verify 1:N relationship from the Company side (Company has 2 experiences)
+        // 6. Verify published company in public endpoint with both experiences
+        mockMvc.perform(get("/api/v1/public/companies"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].name").value("Acme Corp"))
+                .andExpect(jsonPath("$[0].status").value("PUBLISHED"))
+                .andExpect(jsonPath("$[0].experiences", hasSize(2)))
+                .andExpect(jsonPath("$[0].experiences[0].status").doesNotExist())
+                .andExpect(jsonPath("$[0].experiences[1].status").doesNotExist());
+
         mockMvc.perform(get("/api/v1/public/companies/acme-corp"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Acme Corp"))
-                .andExpect(jsonPath("$.experiences", hasSize(2)))
-                .andExpect(jsonPath("$.experiences[0].role").value("Desenvolvedor Júnior"))
-                .andExpect(jsonPath("$.experiences[1].role").value("Desenvolvedor Sênior"));
+                .andExpect(jsonPath("$.experiences", hasSize(2)));
 
-        // 5. Verify Public Experience list has both experiences with company details
-        mockMvc.perform(get("/api/v1/public/experiences"))
+        // 7. Unpublish company - hides it immediately from public endpoint
+        mockMvc.perform(patch("/api/v1/admin/companies/" + companyId + "/unpublish")
+                        .with(csrf())
+                        .cookie(adminAuthCookie))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].company").value("Acme Corp"))
-                .andExpect(jsonPath("$[1].company").value("Acme Corp"));
+                .andExpect(jsonPath("$.status").value("DRAFT"));
+
+        mockMvc.perform(get("/api/v1/public/companies"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+
+        mockMvc.perform(get("/api/v1/public/companies/acme-corp"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("A published company without experiences should not appear in public companies list")
+    void publishedCompanyWithoutExperiencesShouldNotAppearPublicly() throws Exception {
+        CompanyRequestDto companyRequest = new CompanyRequestDto(
+                "Empty Corp",
+                "empty-corp",
+                "Sem experiências ainda",
+                null,
+                null
+        );
+
+        MvcResult result = mockMvc.perform(post("/api/v1/admin/companies")
+                        .with(csrf())
+                        .cookie(adminAuthCookie)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(companyRequest)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        UUID companyId = UUID.fromString(objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText());
+
+        // Publish it
+        mockMvc.perform(patch("/api/v1/admin/companies/" + companyId + "/publish")
+                        .with(csrf())
+                        .cookie(adminAuthCookie))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("PUBLISHED"));
+
+        // Should not appear on public list because it has no experiences
+        mockMvc.perform(get("/api/v1/public/companies"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
     }
 
     @Test
@@ -206,6 +271,8 @@ class CompanyExperienceIntegrationTest {
                 .andExpect(jsonPath("$.companyDetails.name").value("Beta Solutions"));
 
         assertThat(companyJpaRepository.findByNameIgnoreCase("Beta Solutions")).isPresent();
+        assertThat(companyJpaRepository.findByNameIgnoreCase("Beta Solutions").get().getStatus())
+                .isEqualTo(PublicationStatus.DRAFT);
     }
 
     @Test

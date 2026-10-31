@@ -6,6 +6,7 @@ import com.example.ghcarvalho.portfolio.project.application.dto.company.CompanyS
 import com.example.ghcarvalho.portfolio.project.application.dto.experience.ExperienceResponseDto;
 import com.example.ghcarvalho.portfolio.project.domain.company.Company;
 import com.example.ghcarvalho.portfolio.project.domain.company.CompanyRepository;
+import com.example.ghcarvalho.portfolio.project.domain.company.PublicationStatus;
 import com.example.ghcarvalho.portfolio.project.domain.experience.Experience;
 
 import org.springframework.http.HttpStatus;
@@ -47,6 +48,7 @@ public class CompanyService {
                 request.description(),
                 request.website(),
                 request.logoUrl(),
+                PublicationStatus.DRAFT,
                 List.of(),
                 now,
                 now
@@ -73,6 +75,7 @@ public class CompanyService {
                 request.description(),
                 request.website(),
                 request.logoUrl(),
+                existing.getStatus(),
                 existing.getExperiences(),
                 existing.getCreatedAt(),
                 OffsetDateTime.now()
@@ -81,10 +84,33 @@ public class CompanyService {
         return toResponse(companyRepository.save(updated));
     }
 
+    @Transactional
+    public CompanyResponseDto publish(UUID id) {
+        Company existing = findByIdOrThrow(id);
+        Company published = existing.publish();
+        return toResponse(companyRepository.save(published));
+    }
+
+    @Transactional
+    public CompanyResponseDto unpublish(UUID id) {
+        Company existing = findByIdOrThrow(id);
+        Company unpublished = existing.unpublish();
+        return toResponse(companyRepository.save(unpublished));
+    }
+
     @Transactional(readOnly = true)
     public List<CompanyResponseDto> findAll() {
         return companyRepository.findAll()
                 .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<CompanyResponseDto> findAllPublished() {
+        return companyRepository.findAllPublished()
+                .stream()
+                .filter(company -> !company.getExperiences().isEmpty())
                 .map(this::toResponse)
                 .toList();
     }
@@ -97,6 +123,18 @@ public class CompanyService {
     @Transactional(readOnly = true)
     public CompanyResponseDto findBySlug(String slug) {
         Company company = companyRepository.findBySlug(slug)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Empresa não encontrada."
+                ));
+
+        return toResponse(company);
+    }
+
+    @Transactional(readOnly = true)
+    public CompanyResponseDto findPublishedBySlug(String slug) {
+        Company company = companyRepository.findPublishedBySlug(slug)
+                .filter(c -> !c.getExperiences().isEmpty())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "Empresa não encontrada."
@@ -140,6 +178,7 @@ public class CompanyService {
                             null,
                             null,
                             null,
+                            PublicationStatus.DRAFT,
                             List.of(),
                             now,
                             now
@@ -171,6 +210,7 @@ public class CompanyService {
                 company.getDescription(),
                 company.getWebsite(),
                 company.getLogoUrl(),
+                company.getStatus(),
                 experiences,
                 company.getCreatedAt(),
                 company.getUpdatedAt()
@@ -187,7 +227,8 @@ public class CompanyService {
                 company.getName(),
                 company.getSlug(),
                 company.getLogoUrl(),
-                company.getWebsite()
+                company.getWebsite(),
+                company.getStatus()
         );
     }
 
@@ -214,7 +255,6 @@ public class CompanyService {
                 experience.getEndDate(),
                 experience.isCurrent(),
                 experience.getDisplayOrder(),
-                experience.getStatus(),
                 experience.getTechnologies(),
                 experience.getCreatedAt(),
                 experience.getUpdatedAt()
@@ -227,4 +267,3 @@ public class CompanyService {
         return slug.isBlank() ? "empresa" : slug;
     }
 }
-
