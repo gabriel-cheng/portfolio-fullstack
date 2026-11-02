@@ -10,13 +10,20 @@ public class ProjectPersistenceMapper {
     public ProjectEntity toEntity(Project project) {
         return new ProjectEntity(
                 project.getId(),
+                project.getNumber(),
                 project.getTitle(),
                 project.getSlug(),
-                project.getSummary(),
-                project.getContent(),
+                project.getCategory(),
+                project.getStatus(),
+                project.getPublicationStatus(),
+                project.getDescription(),
+                project.getHighlights(),
+                project.getTechnologies(),
+                project.getLiveUrl(),
+                project.getGithubUrl(),
+                project.getImage(),
                 project.isFeatured(),
                 project.getDisplayOrder(),
-                project.getStatus(),
                 project.getCreatedAt(),
                 project.getUpdatedAt()
         );
@@ -25,13 +32,20 @@ public class ProjectPersistenceMapper {
     public Project toDomain(ProjectEntity entity) {
         return Project.restore(
                 entity.getId(),
+                entity.getNumber(),
                 entity.getTitle(),
                 entity.getSlug(),
-                entity.getSummary(),
-                entity.getContent(),
+                entity.getCategory(),
+                entity.getStatus(),
+                entity.getPublicationStatus(),
+                entity.getDescription(),
+                entity.getHighlights(),
+                entity.getTechnologies(),
+                entity.getLiveUrl(),
+                entity.getGithubUrl(),
+                entity.getImage(),
                 entity.isFeatured(),
                 entity.getDisplayOrder(),
-                entity.getStatus(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
         );

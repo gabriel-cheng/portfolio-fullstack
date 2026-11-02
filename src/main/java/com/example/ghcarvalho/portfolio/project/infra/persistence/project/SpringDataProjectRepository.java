@@ -2,7 +2,7 @@ package com.example.ghcarvalho.portfolio.project.infra.persistence.project;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.example.ghcarvalho.portfolio.project.domain.project.ProjectStatus;
+import com.example.ghcarvalho.portfolio.project.domain.company.PublicationStatus;
 
 import java.util.List;
 import java.util.Optional;
@@ -13,19 +13,18 @@ public interface SpringDataProjectRepository
 
     Optional<ProjectEntity> findBySlug(String slug);
 
-    Optional<ProjectEntity> findBySlugAndStatus(
+    Optional<ProjectEntity> findBySlugAndPublicationStatus(
             String slug,
-            ProjectStatus status
+            PublicationStatus publicationStatus
     );
 
     List<ProjectEntity> findAllByOrderByDisplayOrderAsc();
 
-    List<ProjectEntity> findAllByStatusOrderByDisplayOrderAsc(
-            ProjectStatus status
+    List<ProjectEntity> findAllByPublicationStatusOrderByDisplayOrderAsc(
+            PublicationStatus publicationStatus
     );
-    
+
     boolean existsBySlug(String slug);
 
     boolean existsBySlugAndIdNot(String slug, UUID id);
-    
 }

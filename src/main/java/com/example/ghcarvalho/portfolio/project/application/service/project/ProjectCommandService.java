@@ -30,10 +30,17 @@ public class ProjectCommandService {
         }
 
         Project project = Project.create(
+                command.number(),
                 command.title(),
                 command.slug(),
-                command.summary(),
-                command.content(),
+                command.category(),
+                command.status(),
+                command.description(),
+                command.highlights(),
+                command.technologies(),
+                command.liveUrl(),
+                command.githubUrl(),
+                command.image(),
                 command.featured(),
                 command.displayOrder()
         );
@@ -54,10 +61,17 @@ public class ProjectCommandService {
         }
 
         project.update(
+                command.number(),
                 command.title(),
                 command.slug(),
-                command.summary(),
-                command.content(),
+                command.category(),
+                command.status(),
+                command.description(),
+                command.highlights(),
+                command.technologies(),
+                command.liveUrl(),
+                command.githubUrl(),
+                command.image(),
                 command.featured(),
                 command.displayOrder()
         );
