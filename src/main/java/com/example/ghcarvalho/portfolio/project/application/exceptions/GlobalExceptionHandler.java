@@ -48,6 +48,20 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(ProjectNotFoundException.class)
+    public ProblemDetail handleProjectNotFound(
+            ProjectNotFoundException exception
+    ) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND,
+                exception.getMessage()
+        );
+
+        problem.setTitle("Projeto não encontrado");
+
+        return problem;
+    }
+
     @ExceptionHandler(AuthenticationFailedException.class)
     public ProblemDetail handleAuthenticationFailed(
             AuthenticationFailedException exception

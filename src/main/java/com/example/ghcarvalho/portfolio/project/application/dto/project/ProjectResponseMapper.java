@@ -10,15 +10,37 @@ public final class ProjectResponseMapper {
     public static ProjectResponseDto toResponse(Project project) {
         return new ProjectResponseDto(
                 project.getId(),
+                project.getNumber(),
                 project.getTitle(),
                 project.getSlug(),
-                project.getSummary(),
-                project.getContent(),
+                project.getCategory(),
+                project.getStatus(),
+                project.getPublicationStatus(),
+                project.getDescription(),
+                project.getHighlights(),
+                project.getTechnologies(),
+                project.getLiveUrl(),
+                project.getGithubUrl(),
+                project.getImage(),
                 project.isFeatured(),
                 project.getDisplayOrder(),
-                project.getStatus(),
                 project.getCreatedAt(),
                 project.getUpdatedAt()
+        );
+    }
+
+    public static PublicProjectResponseDto toPublicResponse(Project project) {
+        return new PublicProjectResponseDto(
+                project.getNumber(),
+                project.getTitle(),
+                project.getCategory(),
+                project.getStatus(),
+                project.getDescription(),
+                project.getHighlights(),
+                project.getTechnologies(),
+                project.getLiveUrl(),
+                project.getGithubUrl(),
+                project.getImage()
         );
     }
 }

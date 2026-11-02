@@ -1,6 +1,6 @@
 package com.example.ghcarvalho.portfolio.project.infra.controller.project;
 
-import com.example.ghcarvalho.portfolio.project.application.dto.project.ProjectResponseDto;
+import com.example.ghcarvalho.portfolio.project.application.dto.project.PublicProjectResponseDto;
 import com.example.ghcarvalho.portfolio.project.application.dto.project.ProjectResponseMapper;
 import com.example.ghcarvalho.portfolio.project.application.query.ProjectQueryService;
 import com.example.ghcarvalho.portfolio.project.domain.project.Project;
@@ -25,19 +25,19 @@ public class PublicProjectController {
     }
 
     @GetMapping
-    public List<ProjectResponseDto> findAllPublished() {
+    public List<PublicProjectResponseDto> findAllPublished() {
         return projectQueryService.findAllPublished()
                 .stream()
-                .map(ProjectResponseMapper::toResponse)
+                .map(ProjectResponseMapper::toPublicResponse)
                 .toList();
     }
 
     @GetMapping("/{slug}")
-    public ProjectResponseDto findPublishedBySlug(
+    public PublicProjectResponseDto findPublishedBySlug(
             @PathVariable String slug
     ) {
         Project project = projectQueryService.findPublishedBySlug(slug);
 
-        return ProjectResponseMapper.toResponse(project);
+        return ProjectResponseMapper.toPublicResponse(project);
     }
 }

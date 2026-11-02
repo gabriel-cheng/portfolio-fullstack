@@ -1,11 +1,13 @@
 package com.example.ghcarvalho.portfolio.project.infra.persistence.project;
 
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.example.ghcarvalho.portfolio.project.domain.company.PublicationStatus;
 import com.example.ghcarvalho.portfolio.project.domain.project.Project;
 import com.example.ghcarvalho.portfolio.project.domain.project.ProjectRepository;
-import com.example.ghcarvalho.portfolio.project.domain.project.ProjectStatus;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,11 +27,47 @@ public class ProjectRepositoryAdapter implements ProjectRepository {
     }
 
     @Override
+    @Transactional
     public Project save(Project project) {
-        ProjectEntity entity = mapper.toEntity(project);
-        ProjectEntity savedEntity = springDataRepository.save(entity);
+        OffsetDateTime now = OffsetDateTime.now();
 
-        return mapper.toDomain(savedEntity);
+        ProjectEntity entity = springDataRepository
+                .findById(project.getId())
+                .orElseGet(ProjectEntity::new);
+
+        boolean isNew = entity.getId() == null;
+
+        if (isNew) {
+            entity.setId(project.getId());
+            entity.setCreatedAt(
+                    project.getCreatedAt() != null
+                            ? project.getCreatedAt()
+                            : now
+            );
+        }
+
+        entity.setNumber(project.getNumber());
+        entity.setTitle(project.getTitle());
+        entity.setSlug(project.getSlug());
+        entity.setCategory(project.getCategory());
+        entity.setStatus(project.getStatus());
+        entity.setPublicationStatus(project.getPublicationStatus());
+        entity.setDescription(project.getDescription());
+        entity.setHighlights(project.getHighlights());
+        entity.setTechnologies(project.getTechnologies());
+        entity.setLiveUrl(project.getLiveUrl());
+        entity.setGithubUrl(project.getGithubUrl());
+        entity.setImage(project.getImage());
+        entity.setFeatured(project.isFeatured());
+        entity.setDisplayOrder(project.getDisplayOrder());
+        entity.setUpdatedAt(
+                project.getUpdatedAt() != null
+                        ? project.getUpdatedAt()
+                        : now
+        );
+
+        ProjectEntity saved = springDataRepository.save(entity);
+        return mapper.toDomain(saved);
     }
 
     @Override
@@ -47,7 +85,7 @@ public class ProjectRepositoryAdapter implements ProjectRepository {
     @Override
     public Optional<Project> findPublishedBySlug(String slug) {
         return springDataRepository
-                .findBySlugAndStatus(slug, ProjectStatus.PUBLISHED)
+                .findBySlugAndPublicationStatus(slug, PublicationStatus.PUBLISHED)
                 .map(mapper::toDomain);
     }
 
@@ -62,8 +100,8 @@ public class ProjectRepositoryAdapter implements ProjectRepository {
     @Override
     public List<Project> findAllPublished() {
         return springDataRepository
-                .findAllByStatusOrderByDisplayOrderAsc(
-                        ProjectStatus.PUBLISHED
+                .findAllByPublicationStatusOrderByDisplayOrderAsc(
+                        PublicationStatus.PUBLISHED
                 )
                 .stream()
                 .map(mapper::toDomain)
@@ -71,6 +109,7 @@ public class ProjectRepositoryAdapter implements ProjectRepository {
     }
 
     @Override
+    @Transactional
     public void deleteById(UUID id) {
         springDataRepository.deleteById(id);
     }
