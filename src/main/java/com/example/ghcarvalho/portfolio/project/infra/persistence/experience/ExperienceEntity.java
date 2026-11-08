@@ -176,7 +176,14 @@ public class ExperienceEntity {
     }
 
     public void setTechnologies(List<String> technologies) {
-        this.technologies = technologies != null ? technologies : new ArrayList<>();
+        if (this.technologies == null) {
+            this.technologies = new ArrayList<>();
+        } else {
+            this.technologies.clear();
+        }
+        if (technologies != null) {
+            this.technologies.addAll(technologies);
+        }
     }
 
     public OffsetDateTime getCreatedAt() {

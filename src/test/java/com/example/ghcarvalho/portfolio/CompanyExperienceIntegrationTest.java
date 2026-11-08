@@ -4,7 +4,10 @@ import com.example.ghcarvalho.portfolio.project.application.dto.company.CompanyR
 import com.example.ghcarvalho.portfolio.project.application.dto.experience.ExperienceRequestDto;
 import com.example.ghcarvalho.portfolio.project.domain.company.PublicationStatus;
 import com.example.ghcarvalho.portfolio.project.domain.experience.EmploymentType;
+import com.example.ghcarvalho.portfolio.project.domain.experience.Experience;
+import com.example.ghcarvalho.portfolio.project.domain.experience.ExperienceRepository;
 import com.example.ghcarvalho.portfolio.project.infra.persistence.company.CompanyJpaRepository;
+import com.example.ghcarvalho.portfolio.project.infra.persistence.experience.ExperienceEntity;
 import com.example.ghcarvalho.portfolio.project.infra.persistence.experience.ExperienceJpaRepository;
 import com.example.ghcarvalho.portfolio.project.infra.persistence.user.AdminUserEntity;
 import com.example.ghcarvalho.portfolio.project.infra.persistence.user.AdminUserRepository;
@@ -35,6 +38,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -53,6 +57,9 @@ class CompanyExperienceIntegrationTest {
 
     @Autowired
     private ExperienceJpaRepository experienceJpaRepository;
+
+    @Autowired
+    private ExperienceRepository experienceRepository;
 
     @Autowired
     private AdminUserRepository adminUserRepository;
@@ -206,6 +213,132 @@ class CompanyExperienceIntegrationTest {
 
         mockMvc.perform(get("/api/v1/public/companies/acme-corp"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Should successfully update an existing experience via PUT /api/v1/admin/experiences/{id}")
+    void shouldUpdateExperienceSuccessfully() throws Exception {
+        // 1. Create company
+        CompanyRequestDto companyRequest = new CompanyRequestDto(
+                "Update Corp",
+                "update-corp",
+                "Descrição",
+                "https://updatecorp.com",
+                null
+        );
+
+        MvcResult companyResult = mockMvc.perform(post("/api/v1/admin/companies")
+                        .with(csrf())
+                        .cookie(adminAuthCookie)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(companyRequest)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        UUID companyId = UUID.fromString(objectMapper.readTree(companyResult.getResponse().getContentAsString()).get("id").asText());
+
+        // 2. Create experience
+        ExperienceRequestDto createExp = new ExperienceRequestDto(
+                "dev-update",
+                companyId,
+                null,
+                "Desenvolvedor Backend",
+                EmploymentType.FULL_TIME,
+                "São Paulo, SP",
+                "Descrição original",
+                LocalDate.of(2022, 1, 1),
+                LocalDate.of(2023, 1, 1),
+                false,
+                1,
+                List.of("Java", "Spring Boot")
+        );
+
+        MvcResult expResult = mockMvc.perform(post("/api/v1/admin/experiences")
+                        .with(csrf())
+                        .cookie(adminAuthCookie)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createExp)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        UUID experienceId = UUID.fromString(objectMapper.readTree(expResult.getResponse().getContentAsString()).get("id").asText());
+
+        // 3. Update experience via PUT /api/v1/admin/experiences/{id}
+        ExperienceRequestDto updateExp = new ExperienceRequestDto(
+                "dev-update",
+                companyId,
+                null,
+                "Desenvolvedor Backend Pleno",
+                EmploymentType.FULL_TIME,
+                "Remoto",
+                "Descrição atualizada",
+                LocalDate.of(2022, 1, 1),
+                null,
+                true,
+                2,
+                List.of("Java", "Spring Boot", "PostgreSQL", "Docker")
+        );
+
+        mockMvc.perform(put("/api/v1/admin/experiences/" + experienceId)
+                        .with(csrf())
+                        .cookie(adminAuthCookie)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateExp)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(experienceId.toString()))
+                .andExpect(jsonPath("$.role").value("Desenvolvedor Backend Pleno"))
+                .andExpect(jsonPath("$.location").value("Remoto"))
+                .andExpect(jsonPath("$.description").value("Descrição atualizada"))
+                .andExpect(jsonPath("$.current").value(true))
+                .andExpect(jsonPath("$.technologies", hasSize(4)))
+                .andExpect(jsonPath("$.technologies[2]").value("PostgreSQL"))
+                .andExpect(jsonPath("$.technologies[3]").value("Docker"));
+
+        Experience expAfterUpdate = experienceRepository.findById(experienceId).orElseThrow();
+        assertThat(expAfterUpdate.getRole()).isEqualTo("Desenvolvedor Backend Pleno");
+        assertThat(expAfterUpdate.getLocation()).isEqualTo("Remoto");
+        assertThat(expAfterUpdate.getDescription()).isEqualTo("Descrição atualizada");
+        assertThat(expAfterUpdate.isCurrent()).isTrue();
+        assertThat(expAfterUpdate.getEndDate()).isNull();
+        assertThat(expAfterUpdate.getDisplayOrder()).isEqualTo(2);
+        assertThat(expAfterUpdate.getTechnologies())
+                .containsExactly("Java", "Spring Boot", "PostgreSQL", "Docker");
+
+        // Verify via GET endpoint as well
+        mockMvc.perform(get("/api/v1/admin/experiences/" + experienceId)
+                        .cookie(adminAuthCookie))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.role").value("Desenvolvedor Backend Pleno"))
+                .andExpect(jsonPath("$.technologies", hasSize(4)))
+                .andExpect(jsonPath("$.technologies[2]").value("PostgreSQL"))
+                .andExpect(jsonPath("$.technologies[3]").value("Docker"));
+
+        // 4. Update experience again with empty technologies list to verify clearing
+        ExperienceRequestDto updateEmptyTech = new ExperienceRequestDto(
+                "dev-update",
+                companyId,
+                null,
+                "Desenvolvedor Backend Pleno",
+                EmploymentType.FULL_TIME,
+                "Remoto",
+                "Descrição atualizada",
+                LocalDate.of(2022, 1, 1),
+                null,
+                true,
+                2,
+                List.of()
+        );
+
+        mockMvc.perform(put("/api/v1/admin/experiences/" + experienceId)
+                        .with(csrf())
+                        .cookie(adminAuthCookie)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateEmptyTech)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.technologies", hasSize(0)));
+
+        Experience expAfterEmpty = experienceRepository.findById(experienceId).orElseThrow();
+        assertThat(expAfterEmpty.getTechnologies()).isEmpty();
     }
 
     @Test
